@@ -18,6 +18,21 @@ hotspots and warnings.
 - AES encryption with static key and IV
 - SHA1 fingerprinting
 - HTML report generation from unsanitized customer data
+- XML parsing with an external resolver enabled
+- XML generation through raw string concatenation
+- Transfer SQL built from account input
+- Predictable transfer references generated with `Random`
+- Hard-coded backup token and clear-text HTTP endpoint
+- Certificate validation callback that accepts every certificate
+- SMTP credentials hard-coded in notification service
+- Email reset HTML built from untrusted values
+- Session cookie without secure attributes
+- Login redirect URL built from untrusted input
+- Partner API key embedded in source code
+- Partner URL built from untrusted host input
+- Partner payload file path built from untrusted input
+- CSV export row built without escaping formulas or separators
+- Exception details returned directly to callers
 
 Do not use this code as an application template. It is deliberately vulnerable.
 

@@ -38,6 +38,29 @@ Module Program
             .Balance = 1500D
         }))
 
+        Dim transferService = New TransferService()
+        Console.WriteLine($"Generated transfer reference: {transferService.GenerateTransferReference(42)}")
+        Console.WriteLine(transferService.CreateTransferSql("CHK-100", "SAV-200", 250D))
+        Console.WriteLine(transferService.BuildBackupRequestBody("CHK-100", 250D))
+
+        Dim profileImportService = New ProfileImportService()
+        Console.WriteLine(profileImportService.BuildProfileXml("Alice Example", "<script>alert('demo')</script>"))
+
+        Dim notificationService = New NotificationService()
+        Using resetEmail = notificationService.BuildPasswordResetEmail(
+            "alice@example.com",
+            "http://bank.example.com/reset?token=demo-token&returnUrl=http://evil.example.com")
+            Console.WriteLine(resetEmail.Body)
+        End Using
+        Console.WriteLine(notificationService.BuildSessionCookie("alice@example.com", "admin"))
+        Console.WriteLine(notificationService.BuildLoginRedirect("http://evil.example.com"))
+
+        Dim partnerIntegrationService = New PartnerIntegrationService()
+        Console.WriteLine(partnerIntegrationService.BuildPartnerAccountUrl("internal-admin.bank.local", "42 OR 1=1"))
+        partnerIntegrationService.SavePartnerPayload("..\..\partner-dump.json", "{""account"":""CHK-100"",""balance"":2500}")
+        Console.WriteLine(partnerIntegrationService.BuildCustomerCsvRow("Alice Example", "alice@example.com", "=cmd|' /C calc'!A0"))
+        Console.WriteLine(partnerIntegrationService.BuildPartnerError(New InvalidOperationException("demo partner failure")))
+
         Console.WriteLine("Forms included for static analysis: LoginForm, AdminToolsForm")
     End Sub
 End Module
