@@ -46,6 +46,15 @@ Module Program
         Dim profileImportService = New ProfileImportService()
         Console.WriteLine(profileImportService.BuildProfileXml("Alice Example", "<script>alert('demo')</script>"))
 
+        Dim notificationService = New NotificationService()
+        Using resetEmail = notificationService.BuildPasswordResetEmail(
+            "alice@example.com",
+            "http://bank.example.com/reset?token=demo-token&returnUrl=http://evil.example.com")
+            Console.WriteLine(resetEmail.Body)
+        End Using
+        Console.WriteLine(notificationService.BuildSessionCookie("alice@example.com", "admin"))
+        Console.WriteLine(notificationService.BuildLoginRedirect("http://evil.example.com"))
+
         Console.WriteLine("Forms included for static analysis: LoginForm, AdminToolsForm")
     End Sub
 End Module

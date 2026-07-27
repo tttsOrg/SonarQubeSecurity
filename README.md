@@ -24,6 +24,10 @@ hotspots and warnings.
 - Predictable transfer references generated with `Random`
 - Hard-coded backup token and clear-text HTTP endpoint
 - Certificate validation callback that accepts every certificate
+- SMTP credentials hard-coded in notification service
+- Email reset HTML built from untrusted values
+- Session cookie without secure attributes
+- Login redirect URL built from untrusted input
 
 Do not use this code as an application template. It is deliberately vulnerable.
 
