@@ -29,6 +29,7 @@ Module Program
 
         Dim auditService = New AuditLogService()
         auditService.WriteLoginFailure("alice@example.com", "P@ssw0rd123")
+        auditService.WriteAdminAction("root", "APPROVED_LIMIT_CHANGE account=CHK-100" & Environment.NewLine & "LOGIN_SUCCESS user=mallory")
 
         Dim reportService = New ReportService()
         Console.WriteLine(reportService.BuildAccountSummary(New Customer With {
@@ -37,6 +38,15 @@ Module Program
             .Email = "alice@example.com",
             .Balance = 1500D
         }))
+        Console.WriteLine(reportService.BuildJsonReport(New Customer With {
+            .Id = 7,
+            .Name = "Mallory ""Demo""",
+            .Email = "mallory@example.com",
+            .Balance = 99999D
+        }, "VIP"":true,""approved"))
+
+        Dim cryptoUtility = New CryptoUtility()
+        Console.WriteLine($"Encrypted legacy PIN: {cryptoUtility.EncryptLegacyPin("1234")}")
 
         Dim transferService = New TransferService()
         Console.WriteLine($"Generated transfer reference: {transferService.GenerateTransferReference(42)}")
@@ -60,6 +70,10 @@ Module Program
         partnerIntegrationService.SavePartnerPayload("..\..\partner-dump.json", "{""account"":""CHK-100"",""balance"":2500}")
         Console.WriteLine(partnerIntegrationService.BuildCustomerCsvRow("Alice Example", "alice@example.com", "=cmd|' /C calc'!A0"))
         Console.WriteLine(partnerIntegrationService.BuildPartnerError(New InvalidOperationException("demo partner failure")))
+
+        Dim batchImportService = New BatchImportService()
+        Console.WriteLine(batchImportService.BuildImportCommand("..\payroll.csv", "daily & whoami"))
+        Console.WriteLine(batchImportService.BuildImportSummaryHtml("..\payroll.csv", "<img src=x onerror=alert(1)>"))
 
         Console.WriteLine("Forms included for static analysis: LoginForm, AdminToolsForm")
     End Sub

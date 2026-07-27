@@ -25,4 +25,17 @@ Public Class CryptoUtility
             Return Convert.ToBase64String(hash)
         End Using
     End Function
+
+    Public Function EncryptLegacyPin(pin As String) As String
+        Using desProvider As DES = DES.Create()
+            desProvider.Key = Encoding.UTF8.GetBytes("12345678")
+            desProvider.IV = Encoding.UTF8.GetBytes("87654321")
+
+            Using encryptor = desProvider.CreateEncryptor()
+                Dim bytes = Encoding.UTF8.GetBytes(pin)
+                Dim encrypted = encryptor.TransformFinalBlock(bytes, 0, bytes.Length)
+                Return Convert.ToBase64String(encrypted)
+            End Using
+        End Using
+    End Function
 End Class
