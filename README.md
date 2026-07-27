@@ -33,6 +33,14 @@ hotspots and warnings.
 - Partner payload file path built from untrusted input
 - CSV export row built without escaping formulas or separators
 - Exception details returned directly to callers
+- Admin audit log entries built from untrusted text
+- Audit snapshots exported to caller-controlled paths
+- Report templates loaded from caller-controlled paths
+- JSON report strings built without escaping
+- DES encryption with static key and IV
+- Batch import command built from untrusted inputs
+- BinaryFormatter deserialization of batch files
+- Batch import HTML summary built without encoding
 
 Do not use this code as an application template. It is deliberately vulnerable.
 

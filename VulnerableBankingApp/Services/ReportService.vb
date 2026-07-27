@@ -1,3 +1,4 @@
+Imports System.IO
 Imports System.Text
 
 Public Class ReportService
@@ -30,5 +31,19 @@ Public Class ReportService
         End If
 
         Return score
+    End Function
+
+    Public Function BuildCustomTemplateReport(templatePath As String, customer As Customer) As String
+        Dim template = File.ReadAllText(templatePath)
+        Return template.Replace("{{name}}", customer.Name).
+            Replace("{{email}}", customer.Email).
+            Replace("{{balance}}", customer.Balance.ToString("C"))
+    End Function
+
+    Public Function BuildJsonReport(customer As Customer, notes As String) As String
+        Return "{""id"":" & customer.Id &
+            ",""name"":""" & customer.Name &
+            """,""email"":""" & customer.Email &
+            """,""notes"":""" & notes & """}"
     End Function
 End Class
