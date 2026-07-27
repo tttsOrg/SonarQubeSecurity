@@ -28,6 +28,11 @@ hotspots and warnings.
 - Email reset HTML built from untrusted values
 - Session cookie without secure attributes
 - Login redirect URL built from untrusted input
+- Partner API key embedded in source code
+- Partner URL built from untrusted host input
+- Partner payload file path built from untrusted input
+- CSV export row built without escaping formulas or separators
+- Exception details returned directly to callers
 
 Do not use this code as an application template. It is deliberately vulnerable.
 
