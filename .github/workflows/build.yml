@@ -65,7 +65,7 @@ jobs:
         shell: powershell
         run: |
           New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory -Force
-          dotnet tool install dotnet-sonarscanner --version $env:SONAR_SCANNER_VERSION --tool-path ${{ runner.temp }}\scanner
+          dotnet tool install dotnet-sonarscanner --version $env:SONAR_SCANNER_VERSION --tool-path ${{ runner.temp }}\scanner --add-source https://api.nuget.org/v3/index.json
 
       - name: Validate SonarCloud configuration
         shell: pwsh
