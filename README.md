@@ -24,7 +24,7 @@ Do not use this code as an application template. It is deliberately vulnerable.
 ## Build
 
 ```powershell
-dotnet build .\SonarQubeSecurityLab.sln --config Release
+dotnet build .\SonarQubeSecurity.sln --config Release
 ```
 
 ## SonarCloud Scan Example
@@ -40,7 +40,7 @@ dotnet sonarscanner begin `
   /d:sonar.host.url="https://sonarcloud.io" `
   /d:sonar.token="%SONAR_TOKEN%"
 
-dotnet build .\SonarQubeSecurityLab.sln --config Release
+dotnet build .\SonarQubeSecurity.sln --config Release
 
 dotnet sonarscanner end /d:sonar.token="%SONAR_TOKEN%"
 ```

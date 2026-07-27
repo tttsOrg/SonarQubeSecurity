@@ -1,0 +1,149 @@
+name: Build and SonarCloud
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 45
+
+    env:
+      CI: "1"
+      SOLUTION_PATH: SonarQubeSecurity.sln
+      BUILD_CONFIGURATION: Release
+      BUILD_PLATFORM: Any CPU
+      SONAR_SCANNER_VERSION: "11.2.1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          distribution: zulu
+          java-version: "17"
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~\sonar\cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Cache SonarScanner
+        id: cache-sonar-scanner
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ runner.temp }}\scanner
+          key: ${{ runner.os }}-sonar-scanner-${{ env.SONAR_SCANNER_VERSION }}
+
+      - name: Install SonarScanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        shell: powershell
+        run: |
+          New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory -Force
+          dotnet tool install dotnet-sonarscanner --version $env:SONAR_SCANNER_VERSION --tool-path ${{ runner.temp }}\scanner
+
+      - name: Validate SonarCloud configuration
+        shell: pwsh
+        env:
+          SONAR_MEDICONNECT_TOKEN: ${{ secrets.SONAR_MEDICONNECT_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+        run: |
+          $missing = @()
+          if ([string]::IsNullOrWhiteSpace($env:SONAR_MEDICONNECT_TOKEN)) { $missing += 'SONAR_MEDICONNECT_TOKEN (secret)' }
+          if ([string]::IsNullOrWhiteSpace($env:SONAR_PROJECT_KEY)) { $missing += 'SONAR_PROJECT_KEY (variable)' }
+          if ([string]::IsNullOrWhiteSpace($env:SONAR_ORGANIZATION)) { $missing += 'SONAR_ORGANIZATION (variable)' }
+
+          if ($missing.Count -gt 0)
+          {
+            Write-Error ("Missing required GitHub Actions configuration: {0}" -f ($missing -join ', '))
+          }
+
+      - name: SonarCloud Begin Analysis
+        id: sonar_begin
+        shell: pwsh
+        env:
+          SONAR_MEDICONNECT_TOKEN: ${{ secrets.SONAR_MEDICONNECT_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+        run: |
+          $exclusions = @(
+            "**/bin/**",
+            "**/obj/**",
+            "**/*.resx",
+            "**/Resources/**",
+            "**/resources/**"
+          ) -join ","
+
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"$env:SONAR_PROJECT_KEY" /o:"$env:SONAR_ORGANIZATION" /d:sonar.token="$env:SONAR_MEDICONNECT_TOKEN" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.verbose=true /d:sonar.sql.file.suffixes=".sql" /d:sonar.exclusions="$exclusions" /d:sonar.scanner.scanAll=false /d:sonar.qualitygate.wait=true /d:sonar.qualitygate.timeout=300
+
+      - name: Restore and Build Solution
+        shell: cmd
+        run: |
+          for /f "usebackq delims=" %%i in (`vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSINSTALL=%%i"
+          if not defined VSINSTALL (
+            echo Visual Studio C++ tools not found on the GitHub runner.
+            exit /b 1
+          )
+          if not exist "%VSINSTALL%\VC\Auxiliary\Build\vcvarsall.bat" (
+            echo vcvarsall.bat was not found under the resolved Visual Studio installation.
+            exit /b 1
+          )
+          call "%VSINSTALL%\VC\Auxiliary\Build\vcvarsall.bat" amd64
+          where dumpbin >nul 2>&1
+          if errorlevel 1 (
+            echo dumpbin.exe was not found on PATH after vcvarsall.bat initialization.
+            exit /b 1
+          )
+          where editbin >nul 2>&1
+          if errorlevel 1 (
+            echo editbin.exe was not found on PATH after vcvarsall.bat initialization.
+            exit /b 1
+          )
+          where dumpbin
+          where editbin
+          msbuild "%SOLUTION_PATH%" /t:Restore;Build /p:RestorePackagesConfig=true /p:Configuration="%BUILD_CONFIGURATION%" /p:Platform="%BUILD_PLATFORM%" /m /v:minimal
+          if errorlevel 1 exit /b %errorlevel%
+
+      - name: SonarCloud End Analysis
+        if: ${{ !cancelled() && steps.sonar_begin.outcome == 'success' }}
+        shell: pwsh
+        env:
+          SONAR_MEDICONNECT_TOKEN: ${{ secrets.SONAR_MEDICONNECT_TOKEN }}
+        run: |
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="$env:SONAR_MEDICONNECT_TOKEN"
+
+      - name: Print SonarCloud links
+        if: always()
+        shell: pwsh
+        env:
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          BRANCH_NAME: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+        run: |
+          Write-Host "SonarCloud project: https://sonarcloud.io/project/overview?id=$env:SONAR_PROJECT_KEY"
+          Write-Host "SonarCloud branch:  https://sonarcloud.io/project/overview?id=$env:SONAR_PROJECT_KEY&branch=$env:BRANCH_NAME"
