@@ -18,6 +18,12 @@ hotspots and warnings.
 - AES encryption with static key and IV
 - SHA1 fingerprinting
 - HTML report generation from unsanitized customer data
+- XML parsing with an external resolver enabled
+- XML generation through raw string concatenation
+- Transfer SQL built from account input
+- Predictable transfer references generated with `Random`
+- Hard-coded backup token and clear-text HTTP endpoint
+- Certificate validation callback that accepts every certificate
 
 Do not use this code as an application template. It is deliberately vulnerable.
 

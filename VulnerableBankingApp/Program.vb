@@ -38,6 +38,14 @@ Module Program
             .Balance = 1500D
         }))
 
+        Dim transferService = New TransferService()
+        Console.WriteLine($"Generated transfer reference: {transferService.GenerateTransferReference(42)}")
+        Console.WriteLine(transferService.CreateTransferSql("CHK-100", "SAV-200", 250D))
+        Console.WriteLine(transferService.BuildBackupRequestBody("CHK-100", 250D))
+
+        Dim profileImportService = New ProfileImportService()
+        Console.WriteLine(profileImportService.BuildProfileXml("Alice Example", "<script>alert('demo')</script>"))
+
         Console.WriteLine("Forms included for static analysis: LoginForm, AdminToolsForm")
     End Sub
 End Module
